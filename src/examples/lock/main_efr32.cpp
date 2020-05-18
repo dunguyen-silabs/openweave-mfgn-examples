@@ -34,15 +34,17 @@
 #include <openthread/link.h>
 #include <openthread/dataset.h>
 #include <openthread/error.h>
+#include <openthread/heap.h>
 #include <openthread/icmp6.h>
 #include <openthread/platform/openthread-system.h>
-extern "C" {
+
+//extern "C" {
 // #include <openthread/platform/platform-softdevice.h>
-}
+//}
 
 #include <Weave/DeviceLayer/WeaveDeviceLayer.h>
 #include <Weave/DeviceLayer/ThreadStackManager.h>
-#include <Weave/DeviceLayer/efr32/GroupKeyStoreImpl.h>
+#include <Weave/DeviceLayer/EFR32/GroupKeyStoreImpl.h>
 #include <Weave/DeviceLayer/internal/testing/ConfigUnitTest.h>
 #include <Weave/DeviceLayer/internal/testing/GroupKeyStoreUnitTest.h>
 #include <Weave/DeviceLayer/internal/testing/SystemClockUnitTest.h>
@@ -70,18 +72,19 @@ int main(void)
 {
     WEAVE_ERROR ret;
 
+    otSysInit(0, NULL);
+
     // Platform-specific initializations. Weave logging not setup yet.
     GetHardwarePlatform().Init();
-
+   
     WeaveLogProgress(Support, "Initializing the Weave stack");
     ret = PlatformMgr().InitWeaveStack();
     SuccessOrAbort(ret, "PlatformMgr().InitWeaveStack() failed.");
-
+  
     WeaveLogProgress(Support, "Initializing the OpenThread stack");
-    otSysInit(0, NULL);
     ret = ThreadStackMgr().InitThreadStack();
     SuccessOrAbort(ret, "ThreadStackMgr().InitThreadStack() failed.");
-
+  
     // Configure device to operate as a Thread sleepy end-device.
     ret = ConnectivityMgr().SetThreadDeviceType(ConnectivityManager::kThreadDeviceType_SleepyEndDevice);
     SuccessOrAbort(ret, "ConnectivityMgr().SetThreadDeviceType() failed.");
@@ -112,21 +115,12 @@ int main(void)
     WeaveLogProgress(Support, "Starting the Application Task");
     ret = GetAppTask().StartAppTask(DeviceController::EventLoopCycle);
     SuccessOrAbort(ret, "GetAppTask().Init() failed.");
-
-    /* FIXME
-    // Activate deep sleep mode
-    SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
-
-    {
-        struct mallinfo minfo = mallinfo();
-        NRF_LOG_INFO("System Heap Utilization: heap size %" PRId32 ", arena size %" PRId32 ", in use %" PRId32 ", free %" PRId32,
-                GetHeapTotalSize(), minfo.arena, minfo.uordblks, minfo.fordblks);
-    }
-     */
-
+    
     WeaveLogProgress(Support, "Starting the FreeRTOS scheduler");
     vTaskStartScheduler();
 
+    //--------------------------------------------------------------------------
+    
     // Should never get here
     WeaveLogProgress(Support, "vTaskStartScheduler() failed");
     WeaveDie();

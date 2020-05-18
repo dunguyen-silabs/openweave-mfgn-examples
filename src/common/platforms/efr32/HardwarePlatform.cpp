@@ -18,47 +18,30 @@
 
 /**
  * @file
- *   This file implements nRF52840 devkit hardware platform specific functionality.
+ *   This file implements EFR32 hardware platform specific functionality.
  */
 
 #include "HardwarePlatform.h"
 #include "app.h"
 #include "Button.h"
 #include "AppTask.h"
-#include "Nrf5LED.h"
+#include "Efr32LED.h"
+
+#include "bsp.h"
+#include "gpiointerrupt.h"
+#include "hal-config-board.h"
+
+#include <FreeRTOS.h>
+#include <efr32-weave-mbedtls-config.h>
+#include <mbedtls/threading.h>
 
 #include <stdbool.h>
 #include <stdint.h>
 
-//#include "boards.h"
-//#include "app_button.h"
-
-//#include "nrf_log.h"
-//#include "nrf_delay.h"
-#include "app_button.h"
-
-#ifdef SOFTDEVICE_PRESENT
-//#include "nrf_sdh.h"
-//#include "nrf_sdh_ble.h"
-//#include "nrf_sdh_soc.h"
-#endif
-#include "nrf_drv_clock.h"
-#if NRF_CRYPTO_ENABLED
-//#include "nrf_crypto.h"
-#endif
-#include "mem_manager.h"
-extern "C" {
-#include "freertos_mbedtls_mutex.h"
-}
+#include "efr32_log.h"
 
 // Singleton.
 HardwarePlatform HardwarePlatform::sHardwarePlatform;
-
-#if NRF_LOG_ENABLED
-//#include "nrf_log_ctrl.h"
-//#include "nrf_log_default_backends.h"
-//#include "nrf_log_backend_uart.h"
-#endif // NRF_LOG_ENABLED
 
 #include <mbedtls/platform.h>
 
@@ -71,9 +54,16 @@ HardwarePlatform HardwarePlatform::sHardwarePlatform;
 #include <openthread/error.h>
 #include <openthread/icmp6.h>
 #include <openthread/platform/openthread-system.h>
-extern "C" {
-#include <openthread/platform/platform-softdevice.h>
-}
+
+typedef struct ButtonArray
+{
+    GPIO_Port_TypeDef port;
+    unsigned int      pin;
+} ButtonArray_t;
+
+static const ButtonArray_t sButtonArray[BSP_BUTTON_COUNT] = BSP_BUTTON_INIT; // GPIO info for the 2 WDTK buttons.
+TimerHandle_t buttonTimers[BSP_BUTTON_COUNT]; // FreeRTOS timers used for debouncing buttons. Array to hold handles to
+                                              // the created timers.
 
 #include <Weave/DeviceLayer/WeaveDeviceLayer.h>
 #include <Weave/DeviceLayer/ThreadStackManager.h>
@@ -87,166 +77,52 @@ using namespace ::nl::Inet;
 using namespace ::nl::Weave;
 using namespace ::nl::Weave::DeviceLayer;
 
-// FIXME: extern "C" size_t GetHeapTotalSize(void);
-
 // ================================================================================
-// Logging Support
-// ================================================================================
-
-#if NRF_LOG_ENABLED
-
-#if NRF_LOG_USES_TIMESTAMP
-
-uint32_t LogTimestamp(void)
+// App Error
+//=================================================================================
+void appError(int err)
 {
-    return static_cast<uint32_t>(nl::Weave::System::Platform::Layer::GetClock_MonotonicMS());
+    EFR32_LOG("!!!!!!!!!!!! App Critical Error: %d !!!!!!!!!!!", err);
+    portDISABLE_INTERRUPTS();
+    while (1)
+        ;
 }
-
-#define LOG_TIMESTAMP_FUNC LogTimestamp
-#define LOG_TIMESTAMP_FREQ 1000
-
-#else // NRF_LOG_USES_TIMESTAMP
-
-#define LOG_TIMESTAMP_FUNC NULL
-#define LOG_TIMESTAMP_FREQ 0
-
-#endif // NRF_LOG_USES_TIMESTAMP
-
-#endif // NRF_LOG_ENABLED
-
-// ================================================================================
-// SoftDevice Support
-// ================================================================================
-
-#if defined(SOFTDEVICE_PRESENT) && SOFTDEVICE_PRESENT
-
-static void OnSoCEvent(uint32_t sys_evt, void * p_context)
-{
-    UNUSED_PARAMETER(p_context);
-
-    otSysSoftdeviceSocEvtHandler(sys_evt);
-}
-
-#endif // defined(SOFTDEVICE_PRESENT) && SOFTDEVICE_PRESENT
 
 // ================================================================================
 // J-Link Monitor Mode Debugging Support
 // ================================================================================
 
 #if JLINK_MMD
-
 extern "C" void JLINK_MONITOR_OnExit(void) {}
-
 extern "C" void JLINK_MONITOR_OnEnter(void) {}
-
 extern "C" void JLINK_MONITOR_OnPoll(void) {}
-
 #endif // JLINK_MMD
+
 
 void HardwarePlatform::Init(void)
 {
-    ret_code_t ret;
-
-#if JLINK_MMD
-    NVIC_SetPriority(DebugMonitor_IRQn, _PRIO_SD_LOWEST);
-#endif
-
-    // Initialize clock driver.
-    ret = nrf_drv_clock_init();
-    APP_ERROR_CHECK(ret);
-
-    nrf_drv_clock_lfclk_request(NULL);
-
-    // Wait for the clock to be ready.
-    while (!nrf_clock_lf_is_running())
+#if EFR32_LOG_ENABLED
+    if (efr32LogInit() != 0)
     {
+        appError(WEAVE_ERROR_MAX);
     }
-
-#if NRF_LOG_ENABLED
-
-    // Initialize logging component
-    ret = NRF_LOG_INIT(LOG_TIMESTAMP_FUNC, LOG_TIMESTAMP_FREQ);
-    APP_ERROR_CHECK(ret);
-
-    // Initialize logging backends
-    NRF_LOG_DEFAULT_BACKENDS_INIT();
-
 #endif
 
-    NRF_LOG_INFO("==================================================");
-    NRF_LOG_INFO(APP_NAME);
-    NRF_LOG_INFO("Hardware Platform: NRF5");
+    EFR32_LOG("==================================================");
+    EFR32_LOG(APP_NAME);
+    EFR32_LOG("Hardware Platform: EFR32");
 #if BUILD_RELEASE
-    NRF_LOG_INFO("*** PSEUDO-RELEASE BUILD ***");
+    EFR32_LOG("*** PSEUDO-RELEASE BUILD ***");
 #else
-    NRF_LOG_INFO("*** DEVELOPMENT BUILD ***");
+    EFR32_LOG("*** DEVELOPMENT BUILD ***");
 #endif
-    NRF_LOG_INFO("==================================================");
+    EFR32_LOG("==================================================");
 
-#if defined(SOFTDEVICE_PRESENT) && SOFTDEVICE_PRESENT
-
-    NRF_LOG_INFO("Enabling SoftDevice");
-
-    ret = nrf_sdh_enable_request();
-    if (ret != NRF_SUCCESS)
-    {
-        NRF_LOG_INFO("nrf_sdh_enable_request() failed");
-        APP_ERROR_HANDLER(ret);
-    }
-
-    NRF_LOG_INFO("Waiting for SoftDevice to be enabled");
-
-    while (!nrf_sdh_is_enabled())
-    {
-    }
-
-    // Register a handler for SOC events.
-    NRF_SDH_SOC_OBSERVER(m_soc_observer, NRF_SDH_SOC_STACK_OBSERVER_PRIO, OnSoCEvent, NULL);
-
-    NRF_LOG_INFO("SoftDevice enable complete");
-
-#endif // defined(SOFTDEVICE_PRESENT) && SOFTDEVICE_PRESENT
-
-    NRF_LOG_INFO("nrf_mem_init()");
-    ret = nrf_mem_init();
-    if (ret != NRF_SUCCESS)
-    {
-        NRF_LOG_INFO("nrf_mem_init() failed");
-        APP_ERROR_HANDLER(ret);
-    }
-
-#if NRF_CRYPTO_ENABLED
-    NRF_LOG_INFO("nrf_crypto_init()");
-    ret = nrf_crypto_init();
-    if (ret != NRF_SUCCESS)
-    {
-        NRF_LOG_INFO("nrf_crypto_init() failed");
-        APP_ERROR_HANDLER(ret);
-    }
-#endif
-
-#if defined(SOFTDEVICE_PRESENT) && SOFTDEVICE_PRESENT
-
-    {
-        NRF_LOG_INFO("enable BLE stack");
-        uint32_t appRAMStart = 0;
-
-        // Configure the BLE stack using the default settings.
-        // Fetch the start address of the application RAM.
-        ret = nrf_sdh_ble_default_cfg_set(WEAVE_DEVICE_LAYER_BLE_CONN_CFG_TAG, &appRAMStart);
-        APP_ERROR_CHECK(ret);
-
-        // Enable BLE stack.
-        ret = nrf_sdh_ble_enable(&appRAMStart);
-        APP_ERROR_CHECK(ret);
-    }
-
-#endif // defined(SOFTDEVICE_PRESENT) && SOFTDEVICE_PRESENT
 
     // Configure mbedTLS to use FreeRTOS-based mutexes.  This ensures that mbedTLS can be used
     // simultaneously from multiple FreeRTOS tasks (e.g. OpenThread, OpenWeave and the application).
-    NRF_LOG_INFO("setup mbedtls");
-    freertos_mbedtls_mutex_init();
+    EFR32_LOG("setup mbedtls");
+    //freertos_mbedtls_mutex_init();
 
     // Reconfigure mbedTLS to use regular calloc and free.
     //
@@ -261,36 +137,32 @@ void HardwarePlatform::Init(void)
     //
     // FIXME: does this have to happen after the Weave and OT stacks are initialized?
     // If so, this would have to be called independently...
-    mbedtls_platform_set_calloc_free(calloc, free);
+    //mbedtls_platform_set_calloc_free(calloc, free);
 
-    // Activate deep sleep mode
-    // FIXME: Is this necessary? Can it be done before we start doing OT/OW iinitializations?
-    //    SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
-
-    NRF_LOG_INFO("Init the LEDs");
+    // Initialize mbedtls threading support on EFR32.
+    THREADING_setup();
+       
+    EFR32_LOG("Init the LEDs");
     InitLEDs();
 
-    NRF_LOG_INFO("Init the Buttons");
+    EFR32_LOG("Init the Buttons");
     InitButtons();
+}
+
+void HardwarePlatform::InitLEDs(void)
+{
+    // Sets gpio pin mode for ALL board Leds.
+    BSP_LedsInit();
+
+    for (uint8_t i = 0; i < PLATFORM_LEDS_COUNT; i++)
+    {
+         mLEDs[i].Init(new Efr32LED(i));
+    }
 }
 
 LED * HardwarePlatform::GetLEDs(void)
 {
     return mLEDs;
-}
-
-void HardwarePlatform::InitLEDs(void)
-{
-    // FIXME: put all leds in a list, and then have loop over that list. cleaner code, no?
-    nrf_gpio_cfg_output(BSP_LED_0);
-    nrf_gpio_cfg_output(BSP_LED_1);
-    nrf_gpio_cfg_output(BSP_LED_2);
-    nrf_gpio_cfg_output(BSP_LED_3);
-
-    mLEDs[0].Init(new Nrf5LED(BSP_LED_0));
-    mLEDs[1].Init(new Nrf5LED(BSP_LED_1));
-    mLEDs[2].Init(new Nrf5LED(BSP_LED_2));
-    mLEDs[3].Init(new Nrf5LED(BSP_LED_3));
 }
 
 // -----------------------------------------------------------------------------
@@ -299,76 +171,126 @@ void HardwarePlatform::InitLEDs(void)
 // Initialize buttons
 int HardwarePlatform::InitButtons(void)
 {
-    int ret;
-
-    static app_button_cfg_t sButtons[] = {
-        { BUTTON_1, APP_BUTTON_ACTIVE_LOW, BUTTON_PULL, HardwarePlatform::ButtonHwEventHandler },
-        { BUTTON_2, APP_BUTTON_ACTIVE_LOW, BUTTON_PULL, HardwarePlatform::ButtonHwEventHandler },
-        { BUTTON_3, APP_BUTTON_ACTIVE_LOW, BUTTON_PULL, HardwarePlatform::ButtonHwEventHandler },
-        { BUTTON_4, APP_BUTTON_ACTIVE_LOW, BUTTON_PULL, HardwarePlatform::ButtonHwEventHandler },
-    };
-
-    ret = app_button_init(sButtons, ARRAY_SIZE(sButtons), pdMS_TO_TICKS(PLATFORM_BUTTON_DEBOUNCE_PERIOD_MS));
-    if (ret != NRF_SUCCESS)
-    {
-        NRF_LOG_INFO("app_button_init() failed");
-        VerifyOrExit(ret == NRF_SUCCESS, );
-    }
-
-    ret = app_button_enable();
-    if (ret != NRF_SUCCESS)
-    {
-        NRF_LOG_INFO("app_button_enable() failed");
-        VerifyOrExit(ret == NRF_SUCCESS, );
-    }
-
-    for (int i = 0; i < PLATFORM_BUTTONS_COUNT; i++)
+    ButtonGpioInit();
+    
+    for (uint8_t i = 0; i < PLATFORM_BUTTONS_COUNT; i++)
     {
         mButtons[0].Init();
+
+        // Create FreeRTOS sw timer for debouncing the button.
+        buttonTimers[i] =
+            xTimerCreate("BtnTmr",                      // Just a text name, not used by the RTOS kernel
+                         PLATFORM_BUTTON_DEBOUNCE_PERIOD_MS, // timer period
+                         false,                         // no timer reload (==one-shot)
+                         (void *)(int)i,                // init timer id = button index
+                         ButtonDebounceTimerCallback    // timer callback handler (all buttons use the same timer cn function)
+            );
     }
 
-    mButtonPinNos[0] = BUTTON_1;
-    mButtonPinNos[1] = BUTTON_2;
-    mButtonPinNos[2] = BUTTON_3;
-    mButtonPinNos[3] = BUTTON_4;
-
-exit:
-    return ret;
+    return 0;
 }
 
-Button * HardwarePlatform::GetButtons(void)
+void HardwarePlatform::ButtonGpioInit(void)
 {
-    return mButtons;
-}
-
-int HardwarePlatform::GetButtonIndex(uint8_t pinNo)
-{
-    for (int i = 0; i < PLATFORM_BUTTONS_COUNT; i++)
+    // Set up button GPIOs to input with pullups.
+    for (uint8_t i = 0; i < BSP_BUTTON_COUNT; i++)
     {
-        if (mButtonPinNos[i] == pinNo)
+        GPIO_PinModeSet(sButtonArray[i].port, sButtonArray[i].pin, gpioModeInputPull, 1);
+    }
+    // Set up interrupt based callback function - trigger on both edges.
+    GPIOINT_Init();
+    GPIOINT_CallbackRegister(sButtonArray[0].pin, Button0Isr);
+    GPIOINT_CallbackRegister(sButtonArray[1].pin, Button1Isr);
+    GPIO_IntConfig(sButtonArray[0].port, sButtonArray[0].pin, true, true, true);
+    GPIO_IntConfig(sButtonArray[1].port, sButtonArray[1].pin, true, true, true);
+
+    // Change GPIO interrupt priority (FreeRTOS asserts unless this is done here!)
+    NVIC_SetPriority(GPIO_EVEN_IRQn, 5);
+    NVIC_SetPriority(GPIO_ODD_IRQn, 5);
+}
+
+void HardwarePlatform::Button0Isr(uint8_t pin)
+{
+    // ISR for Button 0.
+    uint8_t btnIdx = 0;
+
+    if (pin == sButtonArray[btnIdx].pin)
+    {
+        ButtonEventHelper(btnIdx, true); // true== 'isr context'
+    }
+}
+
+void HardwarePlatform::Button1Isr(uint8_t pin)
+{
+    // ISR for Button 1.
+    uint8_t btnIdx = 1;
+
+    if (pin == sButtonArray[btnIdx].pin)
+    {
+        ButtonEventHelper(btnIdx, true); // true== 'isr context'
+    }
+}
+
+void HardwarePlatform::ButtonEventHelper(uint8_t btnIdx, bool isrContext)
+{
+    // May be called from Interrupt context so keep it short!
+
+    if (btnIdx < BSP_BUTTON_COUNT)
+    {
+        // Get button gpio pin state.
+        bool gpioPinPressed = !GPIO_PinInGet(sButtonArray[btnIdx].port, sButtonArray[btnIdx].pin);
+
+        if (isrContext)
         {
-            return i;
+            portBASE_TYPE taskWoken = pdFALSE; // For FreeRTOS timer (below).
+
+            // Start/restart the button debounce timer (Note ISR version of FreeRTOS api call here).
+            xTimerStartFromISR(buttonTimers[btnIdx], &taskWoken);
+
+            if (taskWoken != pdFALSE)
+            {
+                taskYIELD();
+            }
+        }
+        else
+        {
+            // Called by debounce timer expiry (this indicates that button gpio
+            // is now stable).
+            // Note- NOT in isr context at this point.
+
+            // Notify App of button state change.
+            ButtonHwEventHandler(btnIdx, gpioPinPressed);
         }
     }
-    // FIXME: proper error handling
-    NRF_LOG_ERROR("ERROR: no button associated with pinNo [%d]", pinNo);
-    return -1;
+}
+
+void HardwarePlatform::ButtonDebounceTimerCallback(TimerHandle_t xTimer)
+{
+    // Get the button index of the expired timer and call button event helper.
+
+    uint32_t timerId;
+
+    timerId = (uint32_t)pvTimerGetTimerID(xTimer);
+    if (timerId < BSP_BUTTON_COUNT)
+    {
+        uint8_t btnIdx = timerId;
+        ButtonEventHelper(btnIdx, false); // false== 'not from isr context'
+    }
 }
 
 /**
- * Event handler called for every hw platform button event.
+ * Event handler called for every (debounced) hw platform button event.
  */
-void HardwarePlatform::ButtonHwEventHandler(uint8_t pin_no, uint8_t button_action)
+void HardwarePlatform::ButtonHwEventHandler(uint8_t buttonIndex, bool pressed)
 {
     HardwarePlatform & _this = GetHardwarePlatform();
-    int buttonIndex          = _this.GetButtonIndex(pin_no);
     Button::PhysicalButtonAction action;
 
-    if (button_action == APP_BUTTON_PUSH)
+    if (pressed)
     {
         action = Button::kPhysicalButtonAction_Press;
     }
-    else if (button_action == APP_BUTTON_RELEASE)
+    else
     {
         action = Button::kPhysicalButtonAction_Release;
     }
@@ -382,3 +304,9 @@ void HardwarePlatform::ButtonHwEventHandler(uint8_t pin_no, uint8_t button_actio
     appTaskEvent.Data    = &appTaskEventData;
     GetAppTask().PostEvent(&appTaskEvent);
 }
+
+Button * HardwarePlatform::GetButtons(void)
+{
+    return mButtons;
+}
+

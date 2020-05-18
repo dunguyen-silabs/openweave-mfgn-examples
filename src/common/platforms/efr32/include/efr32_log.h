@@ -16,21 +16,21 @@
  *    limitations under the License.
  */
 
-#include "Efr32LED.h"
+/**
+ *    @file
+ *      APIs supported by all hardware platforms that run the example applications.
+ */
 
-#include "bsp.h"
+#ifndef EFR32LOG_H
+#define EFR32LOG_H
 
-Efr32LED::Efr32LED(uint32_t aLEDId)
-{
-    mLEDId = aLEDId;
-}
 
-void Efr32LED::On()
-{
-    BSP_LedSet(mLEDId);
-}
+// EFR32 Logging
+extern "C" int  efr32LogInit(void);
+extern "C" void efr32Log(const char *aFormat, ...);
+#define EFR32_LOG(...) efr32Log(__VA_ARGS__);
 
-void Efr32LED::Off()
-{
-    BSP_LedClear(mLEDId);
-}
+extern "C" void appError(int err);
+
+
+#endif // EFR32LOG_H

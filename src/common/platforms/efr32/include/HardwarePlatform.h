@@ -24,13 +24,23 @@
 #ifndef HARDWARE_PLATFORM_H
 #define HARDWARE_PLATFORM_H
 
+#include <FreeRTOS.h>
+#include <timers.h>
+
 #include "LED.h"
 #include "Button.h"
-// #include "boards.h"
 
-#define PLATFORM_LEDS_COUNT LEDS_NUMBER
-#define PLATFORM_BUTTONS_COUNT BUTTONS_NUMBER
+#define PLATFORM_LEDS_COUNT 4              // LEDS_NUMBER
+#define PLATFORM_BUTTONS_COUNT 2           // BUTTONS_NUMBER
 #define PLATFORM_BUTTON_DEBOUNCE_PERIOD_MS 50
+
+
+// EFR32 WSTK LEDs
+#define BSP_LED_0 0
+#define BSP_LED_1 1
+#define BSP_LED_2 2
+#define BSP_LED_3 3
+
 
 class HardwarePlatform
 {
@@ -47,24 +57,19 @@ public:
     /** Returns an array of the Buttons available on the devkit. */
     Button * GetButtons();
 
-    //    void On(uint32_t ledId);
-    //    void Off(uint32_t ledId);
-    //
-    //    /** Button accessors */
-    //    uint8_t GetButtonIdFromPinNo(uint8_t pinNo);
-    //    uint8_t GetPinNoFromButtonId(uint8_t buttonId);
-
+    
 private:
     LED mLEDs[PLATFORM_LEDS_COUNT];
     Button mButtons[PLATFORM_BUTTONS_COUNT];
-    uint8_t mButtonPinNos[PLATFORM_BUTTONS_COUNT];
-
-    // Initialize GPIO artifacts.
+    
     void InitLEDs(void);
     int InitButtons(void);
-
-    static void ButtonHwEventHandler(uint8_t pin_no, uint8_t button_action);
-    int GetButtonIndex(uint8_t pinNo);
+    void ButtonGpioInit(void);
+    static void Button0Isr(uint8_t pin);
+    static void Button1Isr(uint8_t pin);
+    static void ButtonEventHelper(uint8_t btnIdx, bool isrContext);
+    static void ButtonDebounceTimerCallback(TimerHandle_t xTimer);
+    static void ButtonHwEventHandler(uint8_t buttonIndex, bool pressed);    
 
     // Singleton.
     friend HardwarePlatform & GetHardwarePlatform(void);

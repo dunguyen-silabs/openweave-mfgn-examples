@@ -23,8 +23,8 @@
 
 PROJECT_ROOT := $(realpath .)
 
-# EFR32_TOOLS_ROOT := $(PROJECT_ROOT)/../../../../../../
-# EFR32_SDK_ROOT   := $(PROJECT_ROOT)/../../
+EFR32_SDK_ROOT         := $(EFR32_SDK_ROOT)
+EFR32_TOOLS_ROOT       := $(EFR32_SDK_ROOT)
 
 OPENWEAVE_ROOT         := $(PROJECT_ROOT)/third_party/openweave-core
 BUILD_SUPPORT_DIR      := $(OPENWEAVE_ROOT)/build/efr32
@@ -49,22 +49,24 @@ include $(BUILD_SUPPORT_DIR)/efr32-freertos.mk
 
 LOCK_SRCS = \
     $(PROJECT_ROOT)/src/examples/lock/main_efr32.cpp \
-    $(PROJECT_ROOT)/src/examples/lock/DeviceController.cpp \
-    $(PROJECT_ROOT)/src/examples/lock/WDMFeature.cpp \
-    $(PROJECT_ROOT)/src/examples/lock/traits/BoltLockSettingsTraitDataSink.cpp \
-    $(PROJECT_ROOT)/src/examples/lock/traits/BoltLockTraitDataSource.cpp \
+    $(PROJECT_ROOT)/src/examples/lock/DeviceController_efr32.cpp \
+    $(PROJECT_ROOT)/src/examples/lock/WDMFeature_efr32.cpp \
+    $(PROJECT_ROOT)/src/examples/lock/traits/BoltLockSettingsTraitDataSink_efr32.cpp \
+    $(PROJECT_ROOT)/src/examples/lock/traits/BoltLockTraitDataSource_efr32.cpp \
     $(PROJECT_ROOT)/src/examples/lock/traits/DeviceIdentityTraitDataSource.cpp \
     $(PROJECT_ROOT)/src/examples/lock/schema/BoltLockSettingsTrait.cpp \
     $(PROJECT_ROOT)/src/examples/lock/schema/BoltLockTrait.cpp \
     $(PROJECT_ROOT)/src/examples/lock/schema/DeviceIdentityTrait.cpp \
-    $(PROJECT_ROOT)/src/common/AppTask.cpp \
+    $(PROJECT_ROOT)/src/common/AppTask_efr32.cpp \
     $(PROJECT_ROOT)/src/common/LED.cpp \
     $(PROJECT_ROOT)/src/common/Button.cpp \
     $(PROJECT_ROOT)/src/common/ConnectivityState.cpp \
-    $(PROJECT_ROOT)/src/common/AppSoftwareUpdateManager.cpp \
+    $(PROJECT_ROOT)/src/common/AppSoftwareUpdateManager_efr32.cpp \
     $(PROJECT_ROOT)/src/common/AltPrintf.c \
     $(PROJECT_ROOT)/src/common/CXXExceptionStubs.cpp \
     $(PROJECT_ROOT)/src/common/FreeRTOSNewlibLockSupport.c \
+    $(PROJECT_ROOT)/src/common/platforms/efr32/HardwarePlatform.cpp \
+    $(PROJECT_ROOT)/src/common/platforms/efr32/Efr32LED.cpp \
     $(PROJECT_ROOT)/third_party/printf/printf.c
 
 OCSENSOR_SRCS = \
@@ -149,5 +151,8 @@ ifdef DEVICE_FIRMWARE_REVISION
 DEFINES += \
     WEAVE_DEVICE_CONFIG_DEVICE_FIRMWARE_REVISION=\"$(DEVICE_FIRMWARE_REVISION)\"
 endif
+
+OPENTHREAD_PROJECT_CONFIG = $(PROJECT_ROOT)/src/common/include/OpenThreadConfig.h
+OPENWEAVE_PROJECT_CONFIG = $(PROJECT_ROOT)/src/examples/$(APP_DIR)/include/WeaveProjectConfig.h
 
 $(call GenerateBuildRules)

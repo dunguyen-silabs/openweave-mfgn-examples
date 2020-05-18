@@ -16,21 +16,23 @@
  *    limitations under the License.
  */
 
-#include "Efr32LED.h"
+#ifndef EFR32_LED_H
+#define EFR32_LED_H
 
-#include "bsp.h"
+#include "PlatformLED.h"
 
-Efr32LED::Efr32LED(uint32_t aLEDId)
+/**
+ * Base class that encapsulates the functionality of a LED.
+ */
+class Efr32LED : public PlatformLED
 {
-    mLEDId = aLEDId;
-}
+public:
+    Efr32LED(uint32_t ledId);
+    void On(void);
+    void Off(void);
 
-void Efr32LED::On()
-{
-    BSP_LedSet(mLEDId);
-}
+private:
+    uint32_t mLEDId;
+};
 
-void Efr32LED::Off()
-{
-    BSP_LedClear(mLEDId);
-}
+#endif // EFR32_LED_H

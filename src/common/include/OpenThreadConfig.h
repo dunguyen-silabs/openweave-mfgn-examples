@@ -26,10 +26,10 @@
 #ifndef OPENTHREAD_PLATFORM_CONFIG_H
 #define OPENTHREAD_PLATFORM_CONFIG_H
 
-// Disable the Nordic-supplied OpenThread logging facilities and use
+// Disable the platform vendor supplied OpenThread logging facilities and use
 // the facilities provided by the OpenWeave Device Layer (see
-// openweave/src/adaptations/device-layer/nRF5/Logging.cpp).
-// #define OPENTHREAD_CONFIG_LOG_OUTPUT OPENTHREAD_CONFIG_LOG_OUTPUT_APP
+// openweave/src/adaptations/device-layer/xxxx/Logging.cpp).
+#define OPENTHREAD_CONFIG_LOG_OUTPUT OPENTHREAD_CONFIG_LOG_OUTPUT_APP
 
 // When operating in a less than ideal RF environment, having a more forgiving configuration
 // of OpenThread makes thread a great deal more reliable.
@@ -46,12 +46,5 @@
 // Use smaller maximum interval to speed up reattaching.
 #define OPENTHREAD_CONFIG_MLE_ATTACH_BACKOFF_MAXIMUM_INTERVAL (60 * 10 * 1000) // default 1200000 ms
 
-// Use the Nordic-supplied default platform configuration for remainder
-// of OpenThread config options.
-//
-// NB: This file gets included during the build of OpenThread.  Hence
-// it cannot use "openthread" in the path to the included file.
-//
-// #include "openthread-core-nrf52840-config.h"
 
 #endif // OPENTHREAD_PLATFORM_CONFIG_H
