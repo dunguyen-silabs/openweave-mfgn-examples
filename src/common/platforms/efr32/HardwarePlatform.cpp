@@ -27,11 +27,6 @@
 #include "AppTask.h"
 #include "Efr32LED.h"
 
-#include "bsp.h"
-#include "gpiointerrupt.h"
-#include "hal-config-board.h"
-
-#include <FreeRTOS.h>
 #include <efr32-weave-mbedtls-config.h>
 #include <mbedtls/threading.h>
 
@@ -61,9 +56,8 @@ typedef struct ButtonArray
     unsigned int      pin;
 } ButtonArray_t;
 
-static const ButtonArray_t sButtonArray[BSP_BUTTON_COUNT] = BSP_BUTTON_INIT; // GPIO info for the 2 WDTK buttons.
-TimerHandle_t buttonTimers[BSP_BUTTON_COUNT]; // FreeRTOS timers used for debouncing buttons. Array to hold handles to
-                                              // the created timers.
+static const ButtonArray_t sButtonArray[PLATFORM_BUTTONS_COUNT] = BSP_BUTTON_INIT; // GPIO info for the 2 WDTK buttons.
+TimerHandle_t buttonTimers[PLATFORM_BUTTONS_COUNT]; // FreeRTOS timers used for debouncing buttons.
 
 #include <Weave/DeviceLayer/WeaveDeviceLayer.h>
 #include <Weave/DeviceLayer/ThreadStackManager.h>
@@ -193,7 +187,7 @@ int HardwarePlatform::InitButtons(void)
 void HardwarePlatform::ButtonGpioInit(void)
 {
     // Set up button GPIOs to input with pullups.
-    for (uint8_t i = 0; i < BSP_BUTTON_COUNT; i++)
+    for (uint8_t i = 0; i < PLATFORM_BUTTONS_COUNT; i++)
     {
         GPIO_PinModeSet(sButtonArray[i].port, sButtonArray[i].pin, gpioModeInputPull, 1);
     }
@@ -235,11 +229,8 @@ void HardwarePlatform::ButtonEventHelper(uint8_t btnIdx, bool isrContext)
 {
     // May be called from Interrupt context so keep it short!
 
-    if (btnIdx < BSP_BUTTON_COUNT)
+    if (btnIdx < PLATFORM_BUTTONS_COUNT)
     {
-        // Get button gpio pin state.
-        bool gpioPinPressed = !GPIO_PinInGet(sButtonArray[btnIdx].port, sButtonArray[btnIdx].pin);
-
         if (isrContext)
         {
             portBASE_TYPE taskWoken = pdFALSE; // For FreeRTOS timer (below).
@@ -256,10 +247,12 @@ void HardwarePlatform::ButtonEventHelper(uint8_t btnIdx, bool isrContext)
         {
             // Called by debounce timer expiry (this indicates that button gpio
             // is now stable).
-            // Note- NOT in isr context at this point.
 
-            // Notify App of button state change.
-            ButtonHwEventHandler(btnIdx, gpioPinPressed);
+            // Get button gpio pin state.
+            bool pressed = !GPIO_PinInGet(sButtonArray[btnIdx].port, sButtonArray[btnIdx].pin);
+
+            // Notify App task of button state change.
+            ButtonHwEventHandler(btnIdx, pressed);
         }
     }
 }
@@ -271,7 +264,7 @@ void HardwarePlatform::ButtonDebounceTimerCallback(TimerHandle_t xTimer)
     uint32_t timerId;
 
     timerId = (uint32_t)pvTimerGetTimerID(xTimer);
-    if (timerId < BSP_BUTTON_COUNT)
+    if (timerId < PLATFORM_BUTTONS_COUNT)
     {
         uint8_t btnIdx = timerId;
         ButtonEventHelper(btnIdx, false); // false== 'not from isr context'

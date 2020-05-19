@@ -24,15 +24,19 @@
 #ifndef HARDWARE_PLATFORM_H
 #define HARDWARE_PLATFORM_H
 
+#include "bsp.h"
+#include "gpiointerrupt.h"
+#include "hal-config-board.h"
+
 #include <FreeRTOS.h>
 #include <timers.h>
 
 #include "LED.h"
 #include "Button.h"
 
-#define PLATFORM_LEDS_COUNT 4              // LEDS_NUMBER
-#define PLATFORM_BUTTONS_COUNT 2           // BUTTONS_NUMBER
-#define PLATFORM_BUTTON_DEBOUNCE_PERIOD_MS 50
+#define PLATFORM_LEDS_COUNT                  BSP_LED_COUNT
+#define PLATFORM_BUTTONS_COUNT               BSP_BUTTON_COUNT
+#define PLATFORM_BUTTON_DEBOUNCE_PERIOD_MS   50
 
 
 // EFR32 WSTK LEDs
