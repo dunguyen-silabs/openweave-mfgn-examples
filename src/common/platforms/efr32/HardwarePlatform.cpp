@@ -237,7 +237,6 @@ void HardwarePlatform::ButtonEventHelper(uint8_t btnIdx, bool isrContext)
 
             // Start/restart the button debounce timer (Note ISR version of FreeRTOS api call here).
             xTimerStartFromISR(buttonTimers[btnIdx], &taskWoken);
-
             if (taskWoken != pdFALSE)
             {
                 taskYIELD();
@@ -245,8 +244,7 @@ void HardwarePlatform::ButtonEventHelper(uint8_t btnIdx, bool isrContext)
         }
         else
         {
-            // Called by debounce timer expiry (this indicates that button gpio
-            // is now stable).
+            // Called by debounce timer expiry (button gpio is now stable).
 
             // Get button gpio pin state.
             bool pressed = !GPIO_PinInGet(sButtonArray[btnIdx].port, sButtonArray[btnIdx].pin);
@@ -259,7 +257,7 @@ void HardwarePlatform::ButtonEventHelper(uint8_t btnIdx, bool isrContext)
 
 void HardwarePlatform::ButtonDebounceTimerCallback(TimerHandle_t xTimer)
 {
-    // Get the button index of the expired timer and call button event helper.
+    // Get the timerId of the expired timer and call button event helper.
 
     uint32_t timerId;
 

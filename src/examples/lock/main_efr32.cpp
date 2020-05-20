@@ -72,7 +72,7 @@ int main(void)
 {
     WEAVE_ERROR ret;
 
-    otSysInit(0, NULL); // This must go here for efr32 (before ant OW or OT stack inits)
+    otSysInit(0, NULL); // This must go here for efr32 (before either OW or OT stack inits)
 
     // Platform-specific initializations. Weave logging not setup yet.
     GetHardwarePlatform().Init();

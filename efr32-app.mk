@@ -49,24 +49,25 @@ include $(BUILD_SUPPORT_DIR)/efr32-freertos.mk
 
 LOCK_SRCS = \
     $(PROJECT_ROOT)/src/examples/lock/main_efr32.cpp \
-    $(PROJECT_ROOT)/src/examples/lock/DeviceController_efr32.cpp \
-    $(PROJECT_ROOT)/src/examples/lock/WDMFeature_efr32.cpp \
-    $(PROJECT_ROOT)/src/examples/lock/traits/BoltLockSettingsTraitDataSink_efr32.cpp \
-    $(PROJECT_ROOT)/src/examples/lock/traits/BoltLockTraitDataSource_efr32.cpp \
+    $(PROJECT_ROOT)/src/examples/lock/DeviceController.cpp \
+    $(PROJECT_ROOT)/src/examples/lock/WDMFeature.cpp \
+    $(PROJECT_ROOT)/src/examples/lock/traits/BoltLockSettingsTraitDataSink.cpp \
+    $(PROJECT_ROOT)/src/examples/lock/traits/BoltLockTraitDataSource.cpp \
     $(PROJECT_ROOT)/src/examples/lock/traits/DeviceIdentityTraitDataSource.cpp \
     $(PROJECT_ROOT)/src/examples/lock/schema/BoltLockSettingsTrait.cpp \
     $(PROJECT_ROOT)/src/examples/lock/schema/BoltLockTrait.cpp \
     $(PROJECT_ROOT)/src/examples/lock/schema/DeviceIdentityTrait.cpp \
-    $(PROJECT_ROOT)/src/common/AppTask_efr32.cpp \
+    $(PROJECT_ROOT)/src/common/AppTask.cpp \
     $(PROJECT_ROOT)/src/common/LED.cpp \
     $(PROJECT_ROOT)/src/common/Button.cpp \
     $(PROJECT_ROOT)/src/common/ConnectivityState.cpp \
-    $(PROJECT_ROOT)/src/common/AppSoftwareUpdateManager_efr32.cpp \
+    $(PROJECT_ROOT)/src/common/AppSoftwareUpdateManager.cpp \
     $(PROJECT_ROOT)/src/common/AltPrintf.c \
     $(PROJECT_ROOT)/src/common/CXXExceptionStubs.cpp \
     $(PROJECT_ROOT)/src/common/FreeRTOSNewlibLockSupport.c \
     $(PROJECT_ROOT)/src/common/platforms/efr32/HardwarePlatform.cpp \
     $(PROJECT_ROOT)/src/common/platforms/efr32/Efr32LED.cpp \
+    $(PROJECT_ROOT)/src/common/platforms/efr32/app_timer.cpp \
     $(PROJECT_ROOT)/third_party/printf/printf.c
 
 OCSENSOR_SRCS = \

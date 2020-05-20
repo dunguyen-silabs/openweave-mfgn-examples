@@ -136,7 +136,8 @@ void DeviceController::EventLoopCycle()
                 startLongPressInFlight              = true;
             }
         }
-        else if (buttonPressState == Button::kButtonPressState_Long_Completed)
+        else if ((buttonPressState == Button::kButtonPressState_Long_Completed) ||
+                 (buttonPressState == Button::kButtonPressState_Inactive))  //GB 
         {
             if (_this.mLongPressButtonEventInFlight)
             {
@@ -177,7 +178,19 @@ void DeviceController::EventLoopCycle()
     else if (!_this.mLongPressButtonEventInFlight)
     {
         // Update the provisioning state shown on LED.
-        _this.mConnectivityState.Update(GetWDMFeature().AreServiceSubscriptionsEstablished());
+
+        // Update the provisioning state shown on LED.
+        //GB _this.mConnectivityState.Update(GetWDMFeature().AreServiceSubscriptionsEstablished());
+
+        //GB- Call to mConnectivityState.Update fn above is slow and can cause system clock
+        // to increment slower than real time (disturbs button short/long press timings)
+        // => don't check for connectivity change on every EventLoopCycle iteration:-
+        static uint16_t loopCount = 0;
+        ++loopCount;
+        if ((loopCount % 100) == 0)
+        {
+            _this.mConnectivityState.Update(GetWDMFeature().AreServiceSubscriptionsEstablished());
+        }
     }
 
     // Animate the LEDs.

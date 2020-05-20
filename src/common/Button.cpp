@@ -107,7 +107,7 @@ Button::ButtonPressState Button::UpdateButtonPressState(void)
 
     if (now - mButtonPressStartedMs >= LONG_PRESS_ACTIVATION_COMPLETE_MS)
     {
-        if (mButtonPressState  != kButtonPressState_Long_Completed)
+        if (mButtonPressState != kButtonPressState_Long_Completed) //GB
         {
             WeaveLogProgress(Support, "Moving to kButtonPressState_Long_Completed");
             mButtonPressState = kButtonPressState_Long_Completed;
@@ -115,7 +115,7 @@ Button::ButtonPressState Button::UpdateButtonPressState(void)
     }
     else if (now - mButtonPressStartedMs >= LONG_PRESS_ACTIVATION_START_MS)
     {
-        if (mButtonPressState != kButtonPressState_Long_Started)
+        if (mButtonPressState != kButtonPressState_Long_Started) //GB
         {
             WeaveLogProgress(Support, "Moving to kButtonPressState_Long_Started");
             mButtonPressState = kButtonPressState_Long_Started;
