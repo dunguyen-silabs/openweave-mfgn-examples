@@ -48,7 +48,7 @@ include $(BUILD_SUPPORT_DIR)/efr32-openthread.mk
 include $(BUILD_SUPPORT_DIR)/efr32-freertos.mk
 
 LOCK_SRCS = \
-    $(PROJECT_ROOT)/src/examples/lock/main_efr32.cpp \
+    $(PROJECT_ROOT)/src/examples/lock/main.cpp \
     $(PROJECT_ROOT)/src/examples/lock/DeviceController.cpp \
     $(PROJECT_ROOT)/src/examples/lock/WDMFeature.cpp \
     $(PROJECT_ROOT)/src/examples/lock/traits/BoltLockSettingsTraitDataSink.cpp \
@@ -91,6 +91,9 @@ OCSENSOR_SRCS = \
     $(PROJECT_ROOT)/src/common/AltPrintf.c \
     $(PROJECT_ROOT)/src/common/CXXExceptionStubs.cpp \
     $(PROJECT_ROOT)/src/common/FreeRTOSNewlibLockSupport.c \
+    $(PROJECT_ROOT)/src/common/platforms/efr32/HardwarePlatform.cpp \
+    $(PROJECT_ROOT)/src/common/platforms/efr32/Efr32LED.cpp \
+    $(PROJECT_ROOT)/src/common/platforms/efr32/app_timer.cpp \
     $(PROJECT_ROOT)/third_party/printf/printf.c
 
 # To build an app (e.g. ocsensor)
@@ -119,7 +122,8 @@ INC_DIRS = \
     $(PROJECT_ROOT)/src/examples/$(APP_DIR)/include \
     $(PROJECT_ROOT)/src/examples/$(APP_DIR)/traits/include \
     $(PROJECT_ROOT)/src/examples/$(APP_DIR)/schema/include \
-    $(PROJECT_ROOT)/third_party/printf
+    $(PROJECT_ROOT)/third_party/printf \
+    $(OPENTHREAD_ROOT)/include
 
 ifeq ($(EFR32FAMILY), efr32mg12)
     LINKER_SCRIPT = $(PROJECT_ROOT)/src/examples/$(APP_DIR)/platforms/efr32/ldscripts/openweave-efr32mg12-example.ld

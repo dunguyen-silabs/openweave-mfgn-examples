@@ -29,6 +29,7 @@
 
 #include <efr32-weave-mbedtls-config.h>
 #include <mbedtls/threading.h>
+#include <openthread/heap.h>
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -101,6 +102,8 @@ void HardwarePlatform::Init(void)
     EFR32_LOG("*** DEVELOPMENT BUILD ***");
 #endif
     EFR32_LOG("==================================================");
+
+    otHeapSetCAllocFree(calloc, free);
 
     // Initialize mbedtls threading support on EFR32.
     EFR32_LOG("setup mbedtls");
