@@ -31,6 +31,18 @@
 // openweave/src/adaptations/device-layer/xxxx/Logging.cpp).
 #define OPENTHREAD_CONFIG_LOG_OUTPUT OPENTHREAD_CONFIG_LOG_OUTPUT_APP
 
+// Turn on a moderate level of logging in OpenThread
+#define OPENTHREAD_CONFIG_LOG_LEVEL OT_LOG_LEVEL_NOTE
+
+// Enable use of external heap allocator (calloc/free) for OpenThread.
+#define OPENTHREAD_CONFIG_HEAP_EXTERNAL_ENABLE 1
+
+// EFR32MG21A020F1024IM32 has 96k of RAM. Reduce the number of buffers to
+// conserve RAM for this Series 2 part.
+#if defined(EFR32MG21A020F1024IM32)
+#define OPENTHREAD_CONFIG_NUM_MESSAGE_BUFFERS 22
+#endif
+
 // When operating in a less than ideal RF environment, having a more forgiving configuration
 // of OpenThread makes thread a great deal more reliable.
 #define OPENTHREAD_CONFIG_TMF_ADDRESS_QUERY_MAX_RETRY_DELAY 120 // default is 28800

@@ -40,25 +40,6 @@ HardwarePlatform HardwarePlatform::sHardwarePlatform;
 
 #include <mbedtls/platform.h>
 
-// FIXME: not sure I need this...
-#include <openthread/instance.h>
-#include <openthread/thread.h>
-#include <openthread/tasklet.h>
-#include <openthread/link.h>
-#include <openthread/dataset.h>
-#include <openthread/error.h>
-#include <openthread/icmp6.h>
-#include <openthread/platform/openthread-system.h>
-
-typedef struct ButtonArray
-{
-    GPIO_Port_TypeDef port;
-    unsigned int      pin;
-} ButtonArray_t;
-
-static const ButtonArray_t sButtonArray[PLATFORM_BUTTONS_COUNT] = BSP_BUTTON_INIT; // GPIO info for the 2 WDTK buttons.
-TimerHandle_t buttonTimers[PLATFORM_BUTTONS_COUNT]; // FreeRTOS timers used for debouncing buttons.
-
 #include <Weave/DeviceLayer/WeaveDeviceLayer.h>
 #include <Weave/DeviceLayer/ThreadStackManager.h>
 #include <Weave/DeviceLayer/efr32/GroupKeyStoreImpl.h>
@@ -70,6 +51,15 @@ using namespace ::nl;
 using namespace ::nl::Inet;
 using namespace ::nl::Weave;
 using namespace ::nl::Weave::DeviceLayer;
+
+typedef struct ButtonArray
+{
+    GPIO_Port_TypeDef port;
+    unsigned int      pin;
+} ButtonArray_t;
+
+static const ButtonArray_t sButtonArray[PLATFORM_BUTTONS_COUNT] = BSP_BUTTON_INIT; // GPIO info for the 2 WDTK buttons.
+TimerHandle_t buttonTimers[PLATFORM_BUTTONS_COUNT]; // FreeRTOS timers used for debouncing buttons.
 
 // ================================================================================
 // App Error
@@ -112,39 +102,19 @@ void HardwarePlatform::Init(void)
 #endif
     EFR32_LOG("==================================================");
 
-
-    // Configure mbedTLS to use FreeRTOS-based mutexes.  This ensures that mbedTLS can be used
-    // simultaneously from multiple FreeRTOS tasks (e.g. OpenThread, OpenWeave and the application).
-    EFR32_LOG("setup mbedtls");
-    //freertos_mbedtls_mutex_init();
-
-    // Reconfigure mbedTLS to use regular calloc and free.
-    //
-    // By default, OpenThread configures mbedTLS to use its private heap at initialization time.  However,
-    // the OpenThread heap is not thread-safe, effectively preventing other threads from using mbedTLS
-    // functions.
-    //
-    // Note that this presumes that the system heap is itself thread-safe.  On newlib-based systems
-    // this requires a proper implementation of __malloc_lock()/__malloc_unlock() for the applicable
-    // RTOS.  It also requires the heap to be provisioned with enough storage to accommodate OpenThread's
-    // needs.
-    //
-    // FIXME: does this have to happen after the Weave and OT stacks are initialized?
-    // If so, this would have to be called independently...
-    //mbedtls_platform_set_calloc_free(calloc, free);
-
     // Initialize mbedtls threading support on EFR32.
+    EFR32_LOG("setup mbedtls");
     THREADING_setup();
-       
-    EFR32_LOG("Init the LEDs");
+
     InitLEDs();
 
-    EFR32_LOG("Init the Buttons");
     InitButtons();
 }
 
 void HardwarePlatform::InitLEDs(void)
 {
+    EFR32_LOG("InitLEDS()");
+
     // Sets gpio pin mode for ALL board Leds.
     BSP_LedsInit();
 
@@ -165,6 +135,8 @@ LED * HardwarePlatform::GetLEDs(void)
 // Initialize buttons
 int HardwarePlatform::InitButtons(void)
 {
+    EFR32_LOG("InitButtons()");
+
     ButtonGpioInit();
     
     for (uint8_t i = 0; i < PLATFORM_BUTTONS_COUNT; i++)
@@ -244,7 +216,7 @@ void HardwarePlatform::ButtonEventHelper(uint8_t btnIdx, bool isrContext)
         }
         else
         {
-            // Called by debounce timer expiry (button gpio is now stable).
+            // Called by debounce timer expiry (button gpio pin is now stable).
 
             // Get button gpio pin state.
             bool pressed = !GPIO_PinInGet(sButtonArray[btnIdx].port, sButtonArray[btnIdx].pin);

@@ -38,13 +38,8 @@
 #include <openthread/icmp6.h>
 #include <openthread/platform/openthread-system.h>
 
-//extern "C" {
-// #include <openthread/platform/platform-softdevice.h>
-//}
-
 #include <Weave/DeviceLayer/WeaveDeviceLayer.h>
 #include <Weave/DeviceLayer/ThreadStackManager.h>
-#include <Weave/DeviceLayer/EFR32/GroupKeyStoreImpl.h>
 #include <Weave/DeviceLayer/internal/testing/ConfigUnitTest.h>
 #include <Weave/DeviceLayer/internal/testing/GroupKeyStoreUnitTest.h>
 #include <Weave/DeviceLayer/internal/testing/SystemClockUnitTest.h>
@@ -72,7 +67,8 @@ int main(void)
 {
     WEAVE_ERROR ret;
 
-    otSysInit(0, NULL); // This must go here for efr32 (before either OW or OT stack inits)
+    otSysInit(0, NULL); // This must go here for efr32 (i.e. before either OW or OT stack inits)
+    otHeapSetCAllocFree(calloc, free);
 
     // Platform-specific initializations. Weave logging not setup yet.
     GetHardwarePlatform().Init();

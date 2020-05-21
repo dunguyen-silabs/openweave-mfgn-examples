@@ -125,9 +125,16 @@ void DeviceController::EventLoopCycle()
     // (All LEDs blink when in "LongPressInFlight".)
     bool startLongPressInFlight = false;
     bool endLongPressInFlight   = false;
+    bool allButtonsReleased     = true;    // Provides check for button released before Long_Completed state.
     for (int idx = 0; idx < PLATFORM_BUTTONS_COUNT; idx++)
     {
         Button::ButtonPressState buttonPressState = (buttons + idx)->UpdateButtonPressState();
+
+        if (buttonPressState != Button::kButtonPressState_Inactive)
+        {
+            allButtonsReleased = false;
+        }
+
         if (buttonPressState == Button::kButtonPressState_Long_Started)
         {
             if (!_this.mLongPressButtonEventInFlight)
@@ -137,7 +144,7 @@ void DeviceController::EventLoopCycle()
             }
         }
         else if ((buttonPressState == Button::kButtonPressState_Long_Completed) ||
-                 (buttonPressState == Button::kButtonPressState_Inactive))  //GB 
+                 ((idx == PLATFORM_BUTTONS_COUNT-1) && allButtonsReleased))
         {
             if (_this.mLongPressButtonEventInFlight)
             {
@@ -178,13 +185,12 @@ void DeviceController::EventLoopCycle()
     else if (!_this.mLongPressButtonEventInFlight)
     {
         // Update the provisioning state shown on LED.
+        // _this.mConnectivityState.Update(GetWDMFeature().AreServiceSubscriptionsEstablished());
 
         // Update the provisioning state shown on LED.
-        //GB _this.mConnectivityState.Update(GetWDMFeature().AreServiceSubscriptionsEstablished());
-
-        //GB- Call to mConnectivityState.Update fn above is slow and can cause system clock
+        // Note- call to mConnectivityState.Update fn is slow and can cause system clock
         // to increment slower than real time (disturbs button short/long press timings)
-        // => don't check for connectivity change on every EventLoopCycle iteration:-
+        // => don't check for connectivity change on every EventLoopCycle iteration-
         static uint16_t loopCount = 0;
         ++loopCount;
         if ((loopCount % 100) == 0)
