@@ -166,7 +166,7 @@ void DeviceController::EventLoopCycle()
         ++loopCount;
         if ((loopCount % 100) == 0)
         {
-        _this.mConnectivityState.Update(GetWDMFeature().AreServiceSubscriptionsEstablished());
+            _this.mConnectivityState.Update(GetWDMFeature().AreServiceSubscriptionsEstablished());
         }
     }
 

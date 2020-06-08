@@ -460,8 +460,7 @@ void DeviceController::FactoryResetButtonHandler()
  *
  * Since the multicast must reach Sleepy End Devices, the multicast address is constructed following these guidelines:
  * - Sleep End Devices subscribe to the mesh local prefix-based multicast addresses (link local and realm local) by default.
- * - To reach the SED in the realm local, you can use the Realm-Local mesh local prefix-based multicast address which follows these
- * rules according to RFC3306.
+ * - To reach the SED in the realm local, you can use the Realm-Local mesh local prefix-based multicast address which follows these rules according to RFC3306.
  *     - flags: 3
  *     - scope: 3
  *     - plen: mesh local prefix length
@@ -475,40 +474,31 @@ void DeviceController::SendIdentifyRequestButtonHandler()
 {
     WeaveLogProgress(Support, "DeviceController::SendIdentifyRequestButtonHandler()");
     DeviceController & _this = GetDeviceController();
+    WEAVE_ERROR err = WEAVE_NO_ERROR;
+    IdentifyRequestMessage identifyReqMsg;
+    nl::Inet::IPAddress ip_addr;
 
     if (!ConfigurationMgr().IsMemberOfFabric())
     {
         WeaveLogError(Support, "DeviceDiscovery err: Device not fabric provisioned");
         return;
     }
+    uint16_t vendorId;
+    ConfigurationMgr().GetVendorId(vendorId);
+    uint16_t productId;
+    ConfigurationMgr().GetProductId(productId);
 
-    // Get the Thread mesh-local prefix
-    const otMeshLocalPrefix * otMeshPrefix = otThreadGetMeshLocalPrefix(ThreadStackMgrImpl().OTInstance());
-    uint64_t otMeshPrefix64                = nl::Weave::Encoding::BigEndian::Get64(otMeshPrefix->m8);
-
-    // Construct the all-thread-nodes multicast address
-    nl::Inet::IPAddress allThreadNodesAddr =
-        IPAddress::MakeIPv6PrefixMulticast(nl::Inet::kIPv6MulticastScope_Realm, 64, otMeshPrefix64, 1);
-    char addrStr[50];
-    allThreadNodesAddr.ToString(addrStr, sizeof(addrStr));
-    WeaveLogDetail(Support, "All thread nodes multicast address: [%s]", addrStr);
-
-    IdentifyRequestMessage identifyReqMsg;
-    identifyReqMsg.TargetFabricId  = ::nl::Weave::DeviceLayer::FabricState.FabricId;
-    identifyReqMsg.TargetModes     = kTargetDeviceMode_UserSelectedMode;
-    identifyReqMsg.TargetVendorId  = 0xFFFF; // Any vendor
-    identifyReqMsg.TargetProductId = 0xFFFF; // Any product
-    identifyReqMsg.TargetDeviceId  = nl::Weave::kAnyNodeId;
+    ip_addr = nl::Inet::IPAddress::MakeIPv6WellKnownMulticast(nl::Inet::kIPv6MulticastScope_Link,
+                                                              nl::Inet::kIPV6MulticastGroup_AllNodes);
+    identifyReqMsg.TargetFabricId   = ::nl::Weave::DeviceLayer::FabricState.FabricId;
+    identifyReqMsg.TargetModes      = kTargetDeviceMode_UserSelectedMode;
+    identifyReqMsg.TargetVendorId   = vendorId;
+    identifyReqMsg.TargetProductId  = productId;
+    identifyReqMsg.TargetDeviceId   = nl::Weave::kAnyNodeId;
 
     WeaveLogProgress(Support, "Sending the Identify request");
-    WeaveLogProgress(Support,
-                     "fabric [0x%016" PRIx64 "] modes [0x%08" PRIx32 "] vendor [0x%04" PRIx16 "] product [0x%04" PRIx16
-                     "] device [0x%016" PRIx64 "]",
-                     identifyReqMsg.TargetFabricId, identifyReqMsg.TargetModes, identifyReqMsg.TargetVendorId,
-                     identifyReqMsg.TargetProductId, identifyReqMsg.TargetDeviceId);
-    WEAVE_ERROR err = _this.mDeviceDescriptionClient.SendIdentifyRequest(allThreadNodesAddr, identifyReqMsg);
-    if (err != WEAVE_NO_ERROR)
-    {
+    err = _this.mDeviceDescriptionClient.SendIdentifyRequest(ip_addr, identifyReqMsg);
+    if (err != WEAVE_NO_ERROR) {
         WeaveLogError(Support, "SendIdentifyRequest failed: [%d]", err);
         return;
     }
@@ -518,7 +508,7 @@ void DeviceController::OnIdentifyResponseReceivedHandler(void * appState, uint64
                                                          const IdentifyResponseMessage & respMsg)
 {
     WeaveLogProgress(Support, "OnIdentifyResponseReceivedHandler");
-    DeviceController & _this = GetDeviceController();
+    DeviceController & _this         = GetDeviceController();
 
     WeaveDeviceDescriptor deviceDesc = respMsg.DeviceDesc;
     char ipAddrStr[64];
