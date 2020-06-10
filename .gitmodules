@@ -3,7 +3,7 @@
 	url = git@github.com:openweave/openweave-core.git
 [submodule "third_party/openthread"]
 	path = third_party/openthread
-	url = git@github.com:openthread/openthread.git
+	url = ssh://git@stash.silabs.com/telegesis/devs_open_thread.git
 [submodule "third_party/printf"]
 	path = third_party/printf
 	url = https://github.com/mpaland/printf
