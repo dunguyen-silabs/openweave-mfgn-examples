@@ -66,7 +66,7 @@ LOCK_SRCS = \
     $(PROJECT_ROOT)/src/common/CXXExceptionStubs.cpp \
     $(PROJECT_ROOT)/src/common/FreeRTOSNewlibLockSupport.c \
     $(PROJECT_ROOT)/src/common/platforms/efr32/HardwarePlatform.cpp \
-    $(PROJECT_ROOT)/src/common/platforms/efr32/Efr32LED.cpp \
+    $(PROJECT_ROOT)/src/common/platforms/efr32/efr32LED.cpp \
     $(PROJECT_ROOT)/src/common/platforms/efr32/app_timer.cpp \
     $(PROJECT_ROOT)/third_party/printf/printf.c
 
@@ -92,7 +92,7 @@ OCSENSOR_SRCS = \
     $(PROJECT_ROOT)/src/common/CXXExceptionStubs.cpp \
     $(PROJECT_ROOT)/src/common/FreeRTOSNewlibLockSupport.c \
     $(PROJECT_ROOT)/src/common/platforms/efr32/HardwarePlatform.cpp \
-    $(PROJECT_ROOT)/src/common/platforms/efr32/Efr32LED.cpp \
+    $(PROJECT_ROOT)/src/common/platforms/efr32/efr32LED.cpp \
     $(PROJECT_ROOT)/src/common/platforms/efr32/app_timer.cpp \
     $(PROJECT_ROOT)/third_party/printf/printf.c
 
@@ -109,7 +109,7 @@ else ifeq ($(APP),ocsensor)
    APP_SRCS = $(OCSENSOR_SRCS)
    $(warning building ocsensor application for $(PLATFORM))
 else
-    $(Error must specify APP as "lock" or "ocsensor". For example,"make APP=lock".)    
+    $(Error must specify APP as "lock" or "ocsensor". For example,"make APP=lock".)
 endif
 
 SRCS = \
@@ -132,7 +132,7 @@ else ifeq ($(EFR32FAMILY), efr32mg21)
 else
     $(Error must specify EFR32FAMILY as "efr32mg12" or "efr32mg21".)
 endif
-    
+
 DEFINES = \
   HARD_FAULT_LOG_ENABLE \
   RETARGET_VCOM \
@@ -145,7 +145,7 @@ DEFINES = \
   THREAD_FULL_LOGS=1 \
   EFR32_LOG_ENABLED=1 \
   NVM3_DEFAULT_NVM_SIZE=40960
-  
+
 CFLAGS = \
     -specs=nano.specs
 

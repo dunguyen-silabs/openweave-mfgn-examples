@@ -43,7 +43,7 @@ HardwarePlatform HardwarePlatform::sHardwarePlatform;
 
 #include <Weave/DeviceLayer/WeaveDeviceLayer.h>
 #include <Weave/DeviceLayer/ThreadStackManager.h>
-#include <Weave/DeviceLayer/efr32/GroupKeyStoreImpl.h>
+#include <Weave/DeviceLayer/EFR32/GroupKeyStoreImpl.h>
 #include <Weave/DeviceLayer/internal/testing/ConfigUnitTest.h>
 #include <Weave/DeviceLayer/internal/testing/GroupKeyStoreUnitTest.h>
 #include <Weave/DeviceLayer/internal/testing/SystemClockUnitTest.h>
@@ -141,7 +141,7 @@ int HardwarePlatform::InitButtons(void)
     EFR32_LOG("InitButtons()");
 
     ButtonGpioInit();
-    
+
     for (uint8_t i = 0; i < PLATFORM_BUTTONS_COUNT; i++)
     {
         mButtons[0].Init();
