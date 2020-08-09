@@ -4,7 +4,6 @@
 [submodule "third_party/openthread"]
 	path = third_party/openthread
 	url = https://github.com/SiliconLabs/openthread.git
-  branch = bugfix/openweave-mfgn-examples_build_error
 [submodule "third_party/printf"]
 	path = third_party/printf
 	url = https://github.com/mpaland/printf
