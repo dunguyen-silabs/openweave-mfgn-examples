@@ -42,6 +42,10 @@ all : | $(OPENTHREAD_SDK_SYMLINK)
 # $(OPENTHREAD_SDK_SYMLINK) :  \
 #    ln -s $(GECKO_SDK_SUITE_DIR) $(OPENTHREAD_SDK_SYMLINK)
 
+#TODO Fix - OpenThread changes required for the MFGN example to build without error
+# cd $(OPENTHREAD_ROOT)  \
+# git apply ../../src/common/platforms/efr32/fixup-openthread-compile-err.patch
+
 include $(BUILD_SUPPORT_DIR)/efr32-app.mk
 include $(BUILD_SUPPORT_DIR)/efr32-openweave.mk
 include $(BUILD_SUPPORT_DIR)/efr32-openthread.mk
