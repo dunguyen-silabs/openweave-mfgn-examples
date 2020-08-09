@@ -1,9 +1,13 @@
 [submodule "third_party/openweave-core"]
 	path = third_party/openweave-core
-	url = git@github.com:openweave/openweave-core.git
+	url = https://github.com/openweave/openweave-core.git
 [submodule "third_party/openthread"]
 	path = third_party/openthread
-	url = ssh://git@stash.silabs.com/telegesis/devs_open_thread.git
+	url = https://github.com/SiliconLabs/openthread.git
+  branch = bugfix/openweave-mfgn-examples_build_error
 [submodule "third_party/printf"]
 	path = third_party/printf
 	url = https://github.com/mpaland/printf
+[submodule "third_party/FreeRTOS"]
+	path = third_party/FreeRTOS
+	url = https://github.com/FreeRTOS/FreeRTOS.git
