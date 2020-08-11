@@ -39,7 +39,7 @@ ret_code_t app_timer_create(xTimerHandle *handle, uint8_t timerMode, void (* tim
         return 1;  // Error.
     }
 
-    return 0;  // Ok.    
+    return 0;  // Ok.
 }
 
 ret_code_t app_timer_start(xTimerHandle handle, uint32_t timerTicks, void * context)

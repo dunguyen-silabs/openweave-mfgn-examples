@@ -61,11 +61,11 @@ public:
     /** Returns an array of the Buttons available on the devkit. */
     Button * GetButtons();
 
-    
+
 private:
     LED mLEDs[PLATFORM_LEDS_COUNT];
     Button mButtons[PLATFORM_BUTTONS_COUNT];
-    
+
     void InitLEDs(void);
     int InitButtons(void);
     void ButtonGpioInit(void);
@@ -73,7 +73,7 @@ private:
     static void Button1Isr(uint8_t pin);
     static void ButtonEventHelper(uint8_t btnIdx, bool isrContext);
     static void ButtonDebounceTimerCallback(TimerHandle_t xTimer);
-    static void ButtonHwEventHandler(uint8_t buttonIndex, bool pressed);    
+    static void ButtonHwEventHandler(uint8_t buttonIndex, bool pressed);
 
     // Singleton.
     friend HardwarePlatform & GetHardwarePlatform(void);
